@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Callable
 
 FH6_DIRECTORY: str | None = "D:\\XboxGames\\Forza Horizon 6\\Content\\"
+FH6_LANGUAGE: str | None = "EN"
 JP_PACK_MISSING_MESSAGE = "Run Forza Horizon 6 and install Japanese language pack."
 
 @dataclass
@@ -94,12 +95,12 @@ def resolve_root(root_argument: str | None) -> Path:
 
 def get_stringtable_paths(root: Path) -> tuple[Path, Path, Path]:
     stringtables_dir = root / "media" / "stripped" / "stringtables"
-    return stringtables_dir, stringtables_dir / "EN.zip", stringtables_dir / "JP.zip"
+    return stringtables_dir, stringtables_dir / f"{FH6_LANGUAGE}.zip", stringtables_dir / "JP.zip"
 
 
 def get_radioinfo_paths(root: Path) -> tuple[Path, Path, Path]:
     audio_dir = root / "media" / "audio"
-    return audio_dir, audio_dir / "RadioInfo_EN.xml", audio_dir / "RadioInfo_JP.xml"
+    return audio_dir, audio_dir / f"RadioInfo_{FH6_LANGUAGE}.xml", audio_dir / "RadioInfo_JP.xml"
 
 
 def get_audio_paths(root: Path) -> tuple[Path, Path]:
@@ -107,9 +108,9 @@ def get_audio_paths(root: Path) -> tuple[Path, Path]:
     return audio_dir, audio_dir / "backup"
 
 
-def backup_stringtables(en_zip: Path, jp_zip: Path, summary: RunSummary) -> None:
-    backup_dir = en_zip.parent / "backup"
-    backup_en = backup_dir / en_zip.name
+def backup_stringtables(lang_zip: Path, jp_zip: Path, summary: RunSummary) -> None:
+    backup_dir = lang_zip.parent / "backup"
+    backup_lang = backup_dir / lang_zip.name
     backup_jp = backup_dir / jp_zip.name
 
     print_step("Preparing stringtable backup.")
@@ -119,36 +120,36 @@ def backup_stringtables(en_zip: Path, jp_zip: Path, summary: RunSummary) -> None
         print_step(f"Creating backup folder: {backup_dir}")
         backup_dir.mkdir(parents=True, exist_ok=True)
         refresh_backup = True
-    elif not backup_en.is_file() or not backup_jp.is_file():
+    elif not backup_lang.is_file() or not backup_jp.is_file():
         print_warning("Stringtable backup is incomplete. Refreshing backup files.")
         refresh_backup = True
     else:
-        live_checksum = sha256sum(en_zip)
-        backup_checksum = sha256sum(backup_en)
+        live_checksum = sha256sum(lang_zip)
+        backup_checksum = sha256sum(backup_lang)
         if live_checksum != backup_checksum:
-            print_warning("Stringtable EN.zip changed since the last backup. Refreshing backup files.")
+            print_warning(f"Stringtable {FH6_LANGUAGE}.zip changed since the last backup. Refreshing backup files.")
             refresh_backup = True
         else:
             print_step("Stringtable backup is current.")
 
     if refresh_backup:
-        copy_file(en_zip, backup_en)
+        copy_file(lang_zip, backup_lang)
         copy_file(jp_zip, backup_jp)
         summary.backups_created += 2
         summary.backups_refreshed += 1
         print_step("Stringtable backup ready.")
 
 
-def replace_stringtable_jp(en_zip: Path, jp_zip: Path, summary: RunSummary) -> None:
-    print_step(f"Replacing {jp_zip.name} with a copy of {en_zip.name}.")
-    copy_file(en_zip, jp_zip)
+def replace_stringtable_jp(lang_zip: Path, jp_zip: Path, summary: RunSummary) -> None:
+    print_step(f"Replacing {jp_zip.name} with a copy of {lang_zip.name}.")
+    copy_file(lang_zip, jp_zip)
     summary.files_replaced += 1
     print_step("Stringtable replacement complete.")
 
 
-def backup_radioinfo(en_xml: Path, jp_xml: Path, summary: RunSummary) -> None:
-    backup_dir = en_xml.parent / "backup"
-    backup_en = backup_dir / en_xml.name
+def backup_radioinfo(lang_xml: Path, jp_xml: Path, summary: RunSummary) -> None:
+    backup_dir = lang_xml.parent / "backup"
+    backup_lang = backup_dir / lang_xml.name
     backup_jp = backup_dir / jp_xml.name
 
     print_step("Preparing RadioInfo backup.")
@@ -158,76 +159,76 @@ def backup_radioinfo(en_xml: Path, jp_xml: Path, summary: RunSummary) -> None:
         print_step(f"Creating backup folder: {backup_dir}")
         backup_dir.mkdir(parents=True, exist_ok=True)
         refresh_backup = True
-    elif not backup_en.is_file() or not backup_jp.is_file():
+    elif not backup_lang.is_file() or not backup_jp.is_file():
         print_warning("RadioInfo backup is incomplete. Refreshing backup files.")
         refresh_backup = True
     else:
-        live_checksum = sha256sum(en_xml)
-        backup_checksum = sha256sum(backup_en)
+        live_checksum = sha256sum(lang_xml)
+        backup_checksum = sha256sum(backup_lang)
         if live_checksum != backup_checksum:
-            print_warning("RadioInfo_EN.xml changed since the last backup. Refreshing backup files.")
+            print_warning(f"RadioInfo_{FH6_LANGUAGE}.xml changed since the last backup. Refreshing backup files.")
             refresh_backup = True
         else:
             print_step("RadioInfo backup is current.")
 
     if refresh_backup:
-        copy_file(en_xml, backup_en)
+        copy_file(lang_xml, backup_lang)
         copy_file(jp_xml, backup_jp)
         summary.backups_created += 2
         summary.backups_refreshed += 1
         print_step("RadioInfo backup ready.")
 
 
-def replace_radioinfo_jp(en_xml: Path, jp_xml: Path, summary: RunSummary) -> None:
-    print_step(f"Replacing {jp_xml.name} with a copy of {en_xml.name}.")
-    copy_file(en_xml, jp_xml)
+def replace_radioinfo_jp(lang_xml: Path, jp_xml: Path, summary: RunSummary) -> None:
+    print_step(f"Replacing {jp_xml.name} with a copy of {lang_xml.name}.")
+    copy_file(lang_xml, jp_xml)
     summary.files_replaced += 1
     print_step("RadioInfo replacement complete.")
 
 
 def discover_stinger_files(audio_dir: Path) -> tuple[list[Path], list[Path]]:
-    en_files = sorted(
+    lang_files = sorted(
         path
         for path in audio_dir.iterdir()
-        if path.is_file() and "_Stingers_EN" in path.name
+        if path.is_file() and f"_Stingers_{FH6_LANGUAGE}" in path.name
     )
     jp_files = sorted(
         path
         for path in audio_dir.iterdir()
         if path.is_file() and "_Stingers_JP" in path.name
     )
-    return en_files, jp_files
+    return lang_files, jp_files
 
 
 def discover_dj_files(audio_dir: Path) -> tuple[list[Path], list[Path]]:
-    dj_pattern = re.compile(r"VO_DJ_[0-9]{2}_(EN|JP)")
-    en_files = sorted(
+    dj_pattern = re.compile(rf"VO_DJ_[0-9]{2}_({FH6_LANGUAGE}|JP)")
+    lang_files = sorted(
         path
         for path in audio_dir.iterdir()
-        if path.is_file() and dj_pattern.search(path.name) and "_EN" in path.name
+        if path.is_file() and dj_pattern.search(path.name) and f"_{FH6_LANGUAGE}" in path.name
     )
     jp_files = sorted(
         path
         for path in audio_dir.iterdir()
         if path.is_file() and dj_pattern.search(path.name) and "_JP" in path.name
     )
-    return en_files, jp_files
+    return lang_files, jp_files
 
 
-def refresh_stinger_backup_needed(en_files: list[Path], jp_files: list[Path], backup_dir: Path) -> bool:
+def refresh_stinger_backup_needed(lang_files: list[Path], jp_files: list[Path], backup_dir: Path) -> bool:
     if not backup_dir.exists():
         return True
 
-    if not en_files and not jp_files:
+    if not lang_files and not jp_files:
         return False
 
-    for en_file in en_files:
-        backup_file = backup_dir / en_file.name
+    for lang_file in lang_files:
+        backup_file = backup_dir / lang_file.name
         if not backup_file.is_file():
             print_warning(f"Missing stinger backup file: {backup_file.name}")
             return True
-        if sha256sum(en_file) != sha256sum(backup_file):
-            print_warning(f"Detected changed stinger file: {en_file.name}")
+        if sha256sum(lang_file) != sha256sum(backup_file):
+            print_warning(f"Detected changed stinger file: {lang_file.name}")
             return True
 
     for jp_file in jp_files:
@@ -241,24 +242,24 @@ def refresh_stinger_backup_needed(en_files: list[Path], jp_files: list[Path], ba
 
 def clear_stinger_backup_files(backup_dir: Path) -> None:
     for backup_file in backup_dir.iterdir():
-        if backup_file.is_file() and ("_Stingers_EN" in backup_file.name or "_Stingers_JP" in backup_file.name):
+        if backup_file.is_file() and (f"_Stingers_{FH6_LANGUAGE}" in backup_file.name or "_Stingers_JP" in backup_file.name):
             backup_file.unlink()
 
 
-def refresh_dj_backup_needed(en_files: list[Path], jp_files: list[Path], backup_dir: Path) -> bool:
+def refresh_dj_backup_needed(lang_files: list[Path], jp_files: list[Path], backup_dir: Path) -> bool:
     if not backup_dir.exists():
         return True
 
-    if not en_files and not jp_files:
+    if not lang_files and not jp_files:
         return False
 
-    for en_file in en_files:
-        backup_file = backup_dir / en_file.name
+    for lang_file in lang_files:
+        backup_file = backup_dir / lang_file.name
         if not backup_file.is_file():
             print_warning(f"Missing DJ backup file: {backup_file.name}")
             return True
-        if sha256sum(en_file) != sha256sum(backup_file):
-            print_warning(f"Detected changed DJ EN file: {en_file.name}")
+        if sha256sum(lang_file) != sha256sum(backup_file):
+            print_warning(f"Detected changed DJ {FH6_LANGUAGE} file: {lang_file.name}")
             return True
 
     for jp_file in jp_files:
@@ -271,22 +272,22 @@ def refresh_dj_backup_needed(en_files: list[Path], jp_files: list[Path], backup_
 
 
 def clear_dj_backup_files(backup_dir: Path) -> None:
-    dj_pattern = re.compile(r"VO_DJ_[0-9]{2}_(EN|JP)")
+    dj_pattern = re.compile(rf"VO_DJ_[0-9]{2}_({FH6_LANGUAGE}|JP)")
     for backup_file in backup_dir.iterdir():
         if backup_file.is_file() and dj_pattern.search(backup_file.name):
             backup_file.unlink()
 
 
 def backup_stingers(audio_dir: Path, summary: RunSummary) -> tuple[list[Path], list[Path]]:
-    en_files, jp_files = discover_stinger_files(audio_dir)
+    lang_files, jp_files = discover_stinger_files(audio_dir)
     backup_dir = audio_dir / "backup"
 
     print_step("Preparing stinger backup.")
-    if not en_files and not jp_files:
-        print_warning("No _Stingers_EN or _Stingers_JP files were found in media\\audio\\fmodbanks.")
-        return en_files, jp_files
+    if not lang_files and not jp_files:
+        print_warning(f"No _Stingers_{FH6_LANGUAGE} or _Stingers_JP files were found in media\\audio\\fmodbanks.")
+        return lang_files, jp_files
 
-    refresh_backup = refresh_stinger_backup_needed(en_files, jp_files, backup_dir)
+    refresh_backup = refresh_stinger_backup_needed(lang_files, jp_files, backup_dir)
 
     if refresh_backup:
         if not backup_dir.exists():
@@ -296,7 +297,7 @@ def backup_stingers(audio_dir: Path, summary: RunSummary) -> tuple[list[Path], l
             print_step("Clearing existing stinger backup files before refresh.")
             clear_stinger_backup_files(backup_dir)
         print_step("Refreshing stinger backup files.")
-        for source in en_files + jp_files:
+        for source in lang_files + jp_files:
             copy_file(source, backup_dir / source.name)
             summary.backups_created += 1
         summary.backups_refreshed += 1
@@ -304,19 +305,19 @@ def backup_stingers(audio_dir: Path, summary: RunSummary) -> tuple[list[Path], l
     else:
         print_step("Stinger backup is current.")
 
-    return en_files, jp_files
+    return lang_files, jp_files
 
 
 def backup_djs(audio_dir: Path, summary: RunSummary) -> tuple[list[Path], list[Path]]:
-    en_files, jp_files = discover_dj_files(audio_dir)
+    lang_files, jp_files = discover_dj_files(audio_dir)
     backup_dir = audio_dir / "backup"
 
     print_step("Preparing DJ backup.")
-    if not en_files and not jp_files:
-        print_warning("No VO_DJ_[0-9][0-9]_EN or VO_DJ_[0-9][0-9]_JP files were found in media\\audio\\fmodbanks.")
-        return en_files, jp_files
+    if not lang_files and not jp_files:
+        print_warning(f"No VO_DJ_[0-9][0-9]_{FH6_LANGUAGE} or VO_DJ_[0-9][0-9]_JP files were found in media\\audio\\fmodbanks.")
+        return lang_files, jp_files
 
-    refresh_backup = refresh_dj_backup_needed(en_files, jp_files, backup_dir)
+    refresh_backup = refresh_dj_backup_needed(lang_files, jp_files, backup_dir)
 
     if refresh_backup:
         if not backup_dir.exists():
@@ -326,7 +327,7 @@ def backup_djs(audio_dir: Path, summary: RunSummary) -> tuple[list[Path], list[P
             print_step("Clearing existing DJ backup files before refresh.")
             clear_dj_backup_files(backup_dir)
         print_step("Refreshing DJ backup files.")
-        for source in en_files + jp_files:
+        for source in lang_files + jp_files:
             copy_file(source, backup_dir / source.name)
             summary.backups_created += 1
         summary.backups_refreshed += 1
@@ -334,56 +335,56 @@ def backup_djs(audio_dir: Path, summary: RunSummary) -> tuple[list[Path], list[P
     else:
         print_step("DJ backup is current.")
 
-    return en_files, jp_files
+    return lang_files, jp_files
 
 
-def replace_stingers(audio_dir: Path, en_files: list[Path], summary: RunSummary) -> None:
-    if not en_files:
+def replace_stingers(audio_dir: Path, lang_files: list[Path], summary: RunSummary) -> None:
+    if not lang_files:
         return
 
     print_step("Replacing Japanese stinger files with English copies.")
-    for en_file in en_files:
-        jp_name = en_file.name.replace("_Stingers_EN", "_Stingers_JP")
+    for lang_file in lang_files:
+        jp_name = lang_file.name.replace(f"_Stingers_{FH6_LANGUAGE}", "_Stingers_JP")
         jp_file = audio_dir / jp_name
         if not jp_file.is_file():
             summary.files_skipped += 1
-            print_warning(f"Skipping {en_file.name}: matching Japanese file was not found.")
+            print_warning(f"Skipping {lang_file.name}: matching Japanese file was not found.")
             continue
 
-        copy_file(en_file, jp_file)
+        copy_file(lang_file, jp_file)
         summary.files_replaced += 1
-        print_step(f"Replaced {jp_file.name} using {en_file.name}.")
+        print_step(f"Replaced {jp_file.name} using {lang_file.name}.")
 
 
-def replace_djs(audio_dir: Path, en_files: list[Path], summary: RunSummary) -> None:
-    if not en_files:
+def replace_djs(audio_dir: Path, lang_files: list[Path], summary: RunSummary) -> None:
+    if not lang_files:
         return
 
     print_step("Replacing Japanese DJ files with English copies.")
-    for en_file in en_files:
-        jp_name = re.sub(r"VO_DJ_([0-9]{2})_EN", r"VO_DJ_\1_JP", en_file.name, count=1)
+    for lang_file in lang_files:
+        jp_name = re.sub(rf"VO_DJ_([0-9]{{2}})_{FH6_LANGUAGE}", r"VO_DJ_\1_JP", lang_file.name, count=1)
         jp_file = audio_dir / jp_name
         if not jp_file.is_file():
             summary.files_skipped += 1
-            print_warning(f"Skipping {en_file.name}: matching Japanese file was not found.")
+            print_warning(f"Skipping {lang_file.name}: matching Japanese file was not found.")
             continue
 
-        copy_file(en_file, jp_file)
+        copy_file(lang_file, jp_file)
         summary.files_replaced += 1
-        print_step(f"Replaced {jp_file.name} using {en_file.name}.")
+        print_step(f"Replaced {jp_file.name} using {lang_file.name}.")
 
 
 def restore_stringtables(stringtables_dir: Path, summary: RunSummary) -> None:
     backup_dir = stringtables_dir / "backup"
-    backup_en = backup_dir / "EN.zip"
+    backup_lang = backup_dir / f"{FH6_LANGUAGE}.zip"
     backup_jp = backup_dir / "JP.zip"
-    live_en = stringtables_dir / "EN.zip"
+    live_lang = stringtables_dir / f"{FH6_LANGUAGE}.zip"
     live_jp = stringtables_dir / "JP.zip"
 
     print_step("Restoring stringtable files from backup.")
-    require_file(backup_en, f"Missing backup file: {backup_en}")
+    require_file(backup_lang, f"Missing backup file: {backup_lang}")
     require_file(backup_jp, f"Missing backup file: {backup_jp}")
-    copy_file(backup_en, live_en)
+    copy_file(backup_lang, live_lang)
     copy_file(backup_jp, live_jp)
     summary.files_restored += 2
     print_step("Stringtable restore complete.")
@@ -391,15 +392,15 @@ def restore_stringtables(stringtables_dir: Path, summary: RunSummary) -> None:
 
 def restore_radioinfo(audio_dir: Path, summary: RunSummary) -> None:
     backup_dir = audio_dir / "backup"
-    backup_en = backup_dir / "RadioInfo_EN.xml"
+    backup_lang = backup_dir / f"RadioInfo_{FH6_LANGUAGE}.xml"
     backup_jp = backup_dir / "RadioInfo_JP.xml"
-    live_en = audio_dir / "RadioInfo_EN.xml"
+    live_lang = audio_dir / f"RadioInfo_{FH6_LANGUAGE}.xml"
     live_jp = audio_dir / "RadioInfo_JP.xml"
 
     print_step("Restoring RadioInfo files from backup.")
-    require_file(backup_en, f"Missing backup file: {backup_en}")
+    require_file(backup_lang, f"Missing backup file: {backup_lang}")
     require_file(backup_jp, f"Missing backup file: {backup_jp}")
-    copy_file(backup_en, live_en)
+    copy_file(backup_lang, live_lang)
     copy_file(backup_jp, live_jp)
     summary.files_restored += 2
     print_step("RadioInfo restore complete.")
@@ -414,7 +415,7 @@ def restore_stingers(audio_dir: Path, summary: RunSummary) -> None:
     backup_files = sorted(
         path
         for path in backup_dir.iterdir()
-        if path.is_file() and ("_Stingers_EN" in path.name or "_Stingers_JP" in path.name)
+        if path.is_file() and (f"_Stingers_{FH6_LANGUAGE}" in path.name or "_Stingers_JP" in path.name)
     )
     if not backup_files:
         raise FileNotFoundError(f"No backed-up stinger files found in: {backup_dir}")
@@ -441,51 +442,54 @@ def print_summary(summary: RunSummary, restore_mode: bool) -> None:
 def run_replace(root: Path) -> int:
     summary = RunSummary()
 
-    _, en_zip, jp_zip = get_stringtable_paths(root)
-    audio_dir, en_xml, jp_xml = get_radioinfo_paths(root)
+    _, lang_zip, jp_zip = get_stringtable_paths(root)
+    audio_dir, lang_xml, jp_xml = get_radioinfo_paths(root)
 
     print_step(f"Using game root: {root}")
+    print_step(f"Using base language: {FH6_LANGUAGE}")
     print_step("Validating required files.")
-    require_file(en_zip, f"Missing required file: {en_zip}")
-    require_file(en_xml, f"Missing required file: {en_xml}")
+    require_file(lang_zip, f"Missing required file: {lang_zip}")
+    require_file(lang_xml, f"Missing required file: {lang_xml}")
     if not jp_zip.is_file():
         return fail(JP_PACK_MISSING_MESSAGE)
     require_file(jp_xml, f"Missing required file: {jp_xml}")
 
-    backup_stringtables(en_zip, jp_zip, summary)
-    replace_stringtable_jp(en_zip, jp_zip, summary)
-    backup_radioinfo(en_xml, jp_xml, summary)
-    replace_radioinfo_jp(en_xml, jp_xml, summary)
+    backup_stringtables(lang_zip, jp_zip, summary)
+    replace_stringtable_jp(lang_zip, jp_zip, summary)
+    backup_radioinfo(lang_xml, jp_xml, summary)
+    replace_radioinfo_jp(lang_xml, jp_xml, summary)
     print_summary(summary, restore_mode=False)
     return 0
 
 
 def run_swap_stringtables(root: Path) -> int:
     summary = RunSummary()
-    _, en_zip, jp_zip = get_stringtable_paths(root)
+    _, lang_zip, jp_zip = get_stringtable_paths(root)
 
     print_step(f"Using game root: {root}")
+    print_step(f"Using base language: {FH6_LANGUAGE}")
     print_step("Validating required stringtable files.")
-    require_file(en_zip, f"Missing required file: {en_zip}")
+    require_file(lang_zip, f"Missing required file: {lang_zip}")
     if not jp_zip.is_file():
         return fail(JP_PACK_MISSING_MESSAGE)
 
-    backup_stringtables(en_zip, jp_zip, summary)
-    replace_stringtable_jp(en_zip, jp_zip, summary)
+    backup_stringtables(lang_zip, jp_zip, summary)
+    replace_stringtable_jp(lang_zip, jp_zip, summary)
     print_summary(summary, restore_mode=False)
     return 0
 
 
 def run_swap_radioinfo(root: Path) -> int:
     summary = RunSummary()
-    _, en_xml, jp_xml = get_radioinfo_paths(root)
+    _, lang_xml, jp_xml = get_radioinfo_paths(root)
 
     print_step(f"Using game root: {root}")
-    require_file(en_xml, f"Missing required file: {en_xml}")
+    print_step(f"Using base language: {FH6_LANGUAGE}")
+    require_file(lang_xml, f"Missing required file: {lang_xml}")
     require_file(jp_xml, f"Missing required file: {jp_xml}")
 
-    backup_radioinfo(en_xml, jp_xml, summary)
-    replace_radioinfo_jp(en_xml, jp_xml, summary)
+    backup_radioinfo(lang_xml, jp_xml, summary)
+    replace_radioinfo_jp(lang_xml, jp_xml, summary)
     print_summary(summary, restore_mode=False)
     return 0
 
@@ -496,6 +500,7 @@ def run_restore(root: Path) -> int:
     audio_dir, _, _ = get_radioinfo_paths(root)
 
     print_step(f"Using game root: {root}")
+    print_step(f"Using base language: {FH6_LANGUAGE}")
     restore_stringtables(stringtables_dir, summary)
     restore_radioinfo(audio_dir, summary)
     print_summary(summary, restore_mode=True)
