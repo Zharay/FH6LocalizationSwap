@@ -11,6 +11,7 @@ from typing import Callable
 
 FH6_DIRECTORY: str | None = "D:\\XboxGames\\Forza Horizon 6\\Content\\"
 FH6_LANGUAGE: str | None = "EN"
+LANGUAGE_PACK_MISSING_MESSAGE = f"Run Forza Horizon 6 and install the {FH6_LANGUAGE} language pack."
 JP_PACK_MISSING_MESSAGE = "Run Forza Horizon 6 and install Japanese language pack."
 
 @dataclass
@@ -450,6 +451,8 @@ def run_replace(root: Path) -> int:
     print_step("Validating required files.")
     require_file(lang_zip, f"Missing required file: {lang_zip}")
     require_file(lang_xml, f"Missing required file: {lang_xml}")
+    if not lang_zip.is_file():
+        return fail(LANGUAGE_PACK_MISSING_MESSAGE)  
     if not jp_zip.is_file():
         return fail(JP_PACK_MISSING_MESSAGE)
     require_file(jp_xml, f"Missing required file: {jp_xml}")
@@ -470,6 +473,8 @@ def run_swap_stringtables(root: Path) -> int:
     print_step(f"Using base language: {FH6_LANGUAGE}")
     print_step("Validating required stringtable files.")
     require_file(lang_zip, f"Missing required file: {lang_zip}")
+    if not lang_zip.is_file():
+        return fail(LANGUAGE_PACK_MISSING_MESSAGE)  
     if not jp_zip.is_file():
         return fail(JP_PACK_MISSING_MESSAGE)
 
