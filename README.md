@@ -3,25 +3,25 @@ A simple script to swap Forza Horizon 6's text and radio station to your chosen 
 
 # Simple Steps (JP > EN)
 1. Launch Forza Horizon 6, go to its Settings > Language Select, Choose Japanese (日本語).
-  - It will say that it will need to download the necessary files. Allow it to do so.
+   - It will say that it will need to download the necessary files. Allow it to do so.
 2. When it is done, close the game
 3. Drop the script into the same folder as the game's executable
 4. Run the script and make your choice:
-  - "Swap StringTables" - Swaps the Japanese text only
-  - "Swap RadioInfo" - Swaps the Japanese radio DJs (some stations are JP only regardless of language)
-  - "Swap everything" - Swaps both options above.
-  - "Restore from backup" - Restores from backup if any exist (generally not needed)
+   - "Swap StringTables" - Swaps the Japanese text only
+   - "Swap RadioInfo" - Swaps the Japanese radio DJs (some stations are JP only regardless of language)
+   - "Swap everything" - Swaps both options above.
+   - "Restore from backup" - Restores from backup if any exist (generally not needed)
 5. Run the game with English text and Japanese audio
 
 ## Changing base language from English
 Open the script with notepad and editing `FH6_LANGUAGE` in the script. By default its set to EN for English.
-**Note:** You can find what values are available by going to `Forza Horizon 6\Content\media\stripped\stringtables`
-**Default (English):** `FH6_LANGUAGE: str | None = "EN"`
+- **Note:** You can find what values are available by going to `Forza Horizon 6\Content\media\stripped\stringtables`
+- **Default (English):** `FH6_LANGUAGE: str | None = "EN"`
 
 ## Changing the base directory
 Open the script with notepad and edit `FH6_DIRECTORY` in the script.
-**Note:** Be sure to use double backslashes for directories!
-**Default:** `FH6_DIRECTORY: str | None = "D:\\XboxGames\\Forza Horizon 6\\Content\\"`
+- **Note:** Be sure to use double backslashes for directories!
+- **Default:** `FH6_DIRECTORY: str | None = "D:\\XboxGames\\Forza Horizon 6\\Content\\"`
 
 ## About backups and updates
 The script will only make backups if your chosen base language's files differ from what was backed up or if no backup exists. This way we account for any updates as they come.
