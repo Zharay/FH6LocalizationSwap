@@ -9,10 +9,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
+# Modify these to change the default game directory and language
+# Don't forget to use double backslashes (\\) in the path on Windows!
 FH6_DIRECTORY: str | None = "D:\\XboxGames\\Forza Horizon 6\\Content\\"
 FH6_LANGUAGE: str | None = "EN"
-LANGUAGE_PACK_MISSING_MESSAGE = f"Run Forza Horizon 6 and install the {FH6_LANGUAGE} language pack."
+
 JP_PACK_MISSING_MESSAGE = "Run Forza Horizon 6 and install Japanese language pack."
+
+def language_pack_missing_message() -> str:
+    return f"Run Forza Horizon 6 and install the {FH6_LANGUAGE} language pack."
 
 @dataclass
 class RunSummary:
@@ -76,6 +81,28 @@ def parse_args() -> argparse.Namespace:
         help="Restore live files from the backup folders.",
     )
     return parser.parse_args()
+
+
+def prompt_language_change() -> None:
+    global FH6_LANGUAGE
+
+    print()
+    print(f"Current language: [{FH6_LANGUAGE}]")
+    print("Enter a two-letter language code (letters only), or press Enter to cancel.")
+
+    while True:
+        user_input = input("Language code: ").strip()
+        if not user_input:
+            print_step("Language change canceled.")
+            return
+
+        if not re.fullmatch(r"[A-Za-z]{2}", user_input):
+            print_warning("Invalid language code. Use exactly two letters (A-Z).")
+            continue
+
+        FH6_LANGUAGE = user_input.upper()
+        print_step(f"Language set to [{FH6_LANGUAGE}].")
+        return
 
 
 def resolve_root(root_argument: str | None) -> Path:
@@ -446,13 +473,13 @@ def run_replace(root: Path) -> int:
     _, lang_zip, jp_zip = get_stringtable_paths(root)
     audio_dir, lang_xml, jp_xml = get_radioinfo_paths(root)
 
-    print_step(f"Using game root: {root}")
+    print_step(f"Using game path: {root}")
     print_step(f"Using base language: {FH6_LANGUAGE}")
     print_step("Validating required files.")
     require_file(lang_zip, f"Missing required file: {lang_zip}")
     require_file(lang_xml, f"Missing required file: {lang_xml}")
     if not lang_zip.is_file():
-        return fail(LANGUAGE_PACK_MISSING_MESSAGE)  
+        return fail(language_pack_missing_message())
     if not jp_zip.is_file():
         return fail(JP_PACK_MISSING_MESSAGE)
     require_file(jp_xml, f"Missing required file: {jp_xml}")
@@ -469,12 +496,12 @@ def run_swap_stringtables(root: Path) -> int:
     summary = RunSummary()
     _, lang_zip, jp_zip = get_stringtable_paths(root)
 
-    print_step(f"Using game root: {root}")
+    print_step(f"Using game path: {root}")
     print_step(f"Using base language: {FH6_LANGUAGE}")
     print_step("Validating required stringtable files.")
     require_file(lang_zip, f"Missing required file: {lang_zip}")
     if not lang_zip.is_file():
-        return fail(LANGUAGE_PACK_MISSING_MESSAGE)  
+        return fail(language_pack_missing_message())
     if not jp_zip.is_file():
         return fail(JP_PACK_MISSING_MESSAGE)
 
@@ -488,7 +515,7 @@ def run_swap_radioinfo(root: Path) -> int:
     summary = RunSummary()
     _, lang_xml, jp_xml = get_radioinfo_paths(root)
 
-    print_step(f"Using game root: {root}")
+    print_step(f"Using game path: {root}")
     print_step(f"Using base language: {FH6_LANGUAGE}")
     require_file(lang_xml, f"Missing required file: {lang_xml}")
     require_file(jp_xml, f"Missing required file: {jp_xml}")
@@ -504,7 +531,7 @@ def run_restore(root: Path) -> int:
     stringtables_dir, _, _ = get_stringtable_paths(root)
     audio_dir, _, _ = get_radioinfo_paths(root)
 
-    print_step(f"Using game root: {root}")
+    print_step(f"Using game path: {root}")
     print_step(f"Using base language: {FH6_LANGUAGE}")
     restore_stringtables(stringtables_dir, summary)
     restore_radioinfo(audio_dir, summary)
@@ -512,16 +539,19 @@ def run_restore(root: Path) -> int:
     return 0
 
 
-def select_operation() -> str:
+def select_operation(root: Path) -> str:
     menu_options: list[tuple[str, str]] = [
         ("swap_stringtables", "Swap StringTables"),
         ("swap_radioinfo", "Swap RadioInfo"),
         ("swap", "Swap everything"),
+        ("change_language", "Change language"),
         ("restore", "Restore from backup"),
         ("exit", "Exit"),
     ]
-
-    print_step("Choose an operation:")
+    print(f"Using game path: {root}")
+    print(f"Selected language: [{FH6_LANGUAGE}]")
+    print()
+    print("Choose an operation:")
     for index, (_, label) in enumerate(menu_options, start=1):
         print(f"  {index}. {label}")
 
@@ -557,10 +587,13 @@ def main() -> int:
             return operation_handlers[operation](root)
         elif sys.stdin.isatty():
             while True:
-                operation = select_operation()
+                operation = select_operation(root)
                 if operation == "exit":
                     print_step("Exiting.")
                     return 0
+                if operation == "change_language":
+                    prompt_language_change()
+                    continue
 
                 try:
                     operation_handlers[operation](root)
