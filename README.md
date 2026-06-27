@@ -22,7 +22,6 @@ Open the script with notepad and editing `FH6_LANGUAGE` in the script. By defaul
 
 ## Changing the base directory - OPTIONAL
 Open the script with notepad and edit `FH6_DIRECTORY` in the script.
-
 - **Note:** Be sure to use double backslashes for directories!
 - **Default:** `FH6_DIRECTORY: str | None = "D:\\XboxGames\\Forza Horizon 6\\Content\\"`
 
